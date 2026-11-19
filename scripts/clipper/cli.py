@@ -56,10 +56,10 @@ def _folder(path: str) -> Path:
 
 
 def _estimate_text(duration: float, cfg: dict) -> str:
-    from .transcribe import estimate_seconds
+    from .transcribe import device_label, estimate_seconds
     est = estimate_seconds(duration, cfg)
     t = est["transcribe_s"]
-    msg = (f"Video length {fmt_time(duration)}. Transcribing with '{est['model']}' on {est['device']} "
+    msg = (f"Video length {fmt_time(duration)}. Transcribing with '{est['model']}' on {device_label(est['device'])} "
            f"takes roughly {max(1, round(t / 60))} min (plus download time).")
     if duration > 3600 and est["model"] not in ("tiny", "base") and est["device"] == "cpu":
         msg += (" Tip: for videos over 1 hour use --model base, or a time range like "

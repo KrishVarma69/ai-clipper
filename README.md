@@ -10,7 +10,8 @@ one command:
 
 Claude reads the transcript and picks the moments itself, so there's **no API key and no
 subscription**. Everything else runs free on your own computer: yt-dlp downloads,
-faster-whisper transcribes with word-level timing, OpenCV finds faces, and ffmpeg renders.
+Whisper transcribes with word-level timing (mlx-whisper on the GPU of Apple Silicon Macs,
+faster-whisper elsewhere), OpenCV finds faces, and ffmpeg renders.
 
 You get:
 
@@ -40,8 +41,10 @@ Mac note: Homebrew's plain `ffmpeg` formula is built without libass and can't bu
 captions. Install `ffmpeg-full`; AI Clipper finds it automatically even though Homebrew
 doesn't put it on your PATH.
 
-An NVIDIA GPU is optional: it's detected automatically and Whisper switches to CUDA (float16).
-Without one, Whisper runs on the CPU (int8), which is fine, including on Apple Silicon Macs.
+Apple Silicon Macs (M1 and newer) transcribe on the Mac's GPU with mlx-whisper, about 4x
+faster than the CPU. Setup installs it automatically. An NVIDIA GPU on Windows/Linux is
+also detected automatically (CUDA, float16). Otherwise Whisper runs on the CPU (int8).
+To force the CPU, set `whisper_device: cpu` in `clipper.yaml`.
 
 Disk: the Python environment is ~1 GB, the "small" Whisper model ~500 MB (downloaded once).
 
@@ -138,9 +141,11 @@ just the lines you want to change. Campaign files override both.
 - **NVIDIA GPU:** detected automatically, often 5-10x faster transcription.
 - **Re-runs are cached:** download, transcription and finished clips are reused. Ask for
   different clips from the same video and only the rendering runs again.
-- Rough CPU timing (Apple M2, measured): transcription takes about half the video's length
-  with `small` (a 1-hour video: ~30 min) and about a fifth with `base` (~12 min). Rendering
-  takes ~10-30 s per clip. Downloads depend on your connection and the site.
+- Rough timing (Apple M2, `small`, measured): on the Mac's GPU, transcription takes about a
+  tenth of the video's length (a 34-min video: 3 min). On a CPU it's roughly a third to
+  two thirds (34-min video: 11-24 min, slower when the computer is low on memory). The
+  first GPU run also downloads the model once (~480 MB). Rendering takes ~10-30 s per clip.
+  Downloads depend on your connection and the site.
 
 ## Running without Claude (standalone)
 

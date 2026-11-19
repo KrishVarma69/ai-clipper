@@ -38,8 +38,8 @@ max_height: 1080
 # For videos over 1 hour on a laptop, "base" is much faster.
 whisper_model: small
 
-# Where Whisper runs: auto (NVIDIA GPU if found, else CPU), cpu, or cuda.
-# Apple Silicon Macs use the CPU (it's still fast).
+# Where Whisper runs: auto, mlx, cuda or cpu.
+# auto = the Mac's GPU on Apple Silicon (mlx-whisper), an NVIDIA GPU if found, else the CPU.
 whisper_device: auto
 
 # Spoken language code (en, es, pt, de, fr, ...). Leave empty to auto-detect.

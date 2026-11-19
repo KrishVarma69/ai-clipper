@@ -34,9 +34,10 @@ Keep the quotes: the path may contain spaces.
 4. **Python packages.** Run `<tool> setup` (takes a few minutes the first time; run it in the
    background if your Bash tool might time out). It creates a private Python environment in
    the user's data folder (not inside the plugin, so updates don't wipe it) and installs
-   yt-dlp, faster-whisper, OpenCV, numpy, PyYAML and requests. If an NVIDIA GPU is found on
-   Windows/Linux it also installs the CUDA libraries so Whisper runs on the GPU (float16);
-   otherwise Whisper runs on the CPU (int8), which is fine on Apple Silicon.
+   yt-dlp, faster-whisper, OpenCV, numpy, PyYAML and requests. On Apple Silicon Macs it also
+   installs mlx-whisper so Whisper runs on the Mac's GPU (several times faster). If an NVIDIA
+   GPU is found on Windows/Linux it installs the CUDA libraries so Whisper runs on the GPU
+   (float16); otherwise Whisper runs on the CPU (int8).
 
 5. **YouTube (optional).** Recent yt-dlp versions need a JavaScript runtime for YouTube.
    If `deno --version` fails, suggest: Mac `brew install deno`, Windows

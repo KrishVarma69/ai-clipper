@@ -3,7 +3,7 @@
 
 Creates a virtual environment in a per-user data folder (NOT inside the plugin
 folder, which Claude Code replaces on every update), installs the Python
-packages, and checks for ffmpeg and an NVIDIA GPU.
+packages, and checks for ffmpeg and a GPU (NVIDIA, or Apple Silicon via mlx-whisper).
 
     python3 setup_env.py            # create/update the venv
     python3 setup_env.py --check    # only report what's missing
@@ -29,6 +29,17 @@ HERE = Path(__file__).resolve().parent
 REQUIREMENTS = HERE / "requirements.txt"
 MIN_PY = (3, 10)
 IMPORTS = ["yt_dlp", "faster_whisper", "cv2", "numpy", "yaml", "requests"]
+
+
+def apple_silicon() -> bool:
+    return platform.system() == "Darwin" and platform.machine() == "arm64"
+
+
+# Apple Silicon: mlx-whisper transcribes on the Mac's GPU. It's installed with --no-deps
+# because it lists PyTorch as a dependency (~500 MB) that only its model-conversion
+# helper uses; the packages it really needs are installed next to it.
+MLX_WHISPER = "mlx-whisper>=0.4.2"
+MLX_DEPS = ["mlx", "numba", "scipy", "tiktoken", "more-itertools", "tqdm", "huggingface_hub"]
 
 
 def data_dir() -> Path:
@@ -68,9 +79,23 @@ def load_env() -> dict:
 
 def requirements_hash() -> str:
     try:
-        return hashlib.sha256(REQUIREMENTS.read_bytes()).hexdigest()[:16]
+        data = REQUIREMENTS.read_bytes()
     except OSError:
         return ""
+    if apple_silicon():
+        data += (MLX_WHISPER + " " + " ".join(MLX_DEPS)).encode()
+    return hashlib.sha256(data).hexdigest()[:16]
+
+
+def mlx_ok() -> bool:
+    py = venv_python()
+    if not apple_silicon() or not py.exists():
+        return False
+    try:
+        out = subprocess.run([str(py), "-c", "import mlx_whisper"], capture_output=True, timeout=120)
+        return out.returncode == 0
+    except Exception:
+        return False
 
 
 # ---------------------------------------------------------------- detection
@@ -240,6 +265,8 @@ def report() -> dict:
         "packages_ok": pk_ok,
         "packages_msg": pk_msg,
         "nvidia_gpu": has_nvidia_gpu(),
+        "apple_gpu": apple_silicon(),
+        "mlx_ok": mlx_ok(),
         "requirements_current": env.get("requirements_hash") == requirements_hash(),
     }
     status["ready"] = bool(status["python_ok"] and status["ffmpeg_ok"] and status["ffmpeg_libass"] and pk_ok)
@@ -259,7 +286,14 @@ def print_report(st: dict) -> None:
     print(f"[{mark(st['packages_ok'])}] packages       {st['packages_msg']}")
     if st["packages_ok"] and not st["requirements_current"]:
         print("[UPDATE ] packages       plugin was updated; re-run setup to refresh packages")
-    print(f"        NVIDIA GPU     {'yes (Whisper will use CUDA)' if st['nvidia_gpu'] else 'no (Whisper uses the CPU, int8)'}")
+    if st.get("apple_gpu"):
+        if st.get("mlx_ok"):
+            print("        Mac GPU        yes (Whisper runs on the GPU with mlx-whisper)")
+        else:
+            print("        Mac GPU        mlx-whisper not installed: re-run setup for much faster transcription"
+                  " (Whisper uses the CPU until then)")
+    else:
+        print(f"        NVIDIA GPU     {'yes (Whisper will use CUDA)' if st['nvidia_gpu'] else 'no (Whisper uses the CPU, int8)'}")
     print("STATUS: " + ("READY" if st["ready"] else "NOT READY"))
 
 
@@ -288,6 +322,11 @@ def setup(gpu: bool | None) -> int:
     if run([vpy, "-m", "pip", "install", "-q", "--upgrade", "-r", str(REQUIREMENTS)]) != 0:
         print("Package install failed. Check your internet connection and try again.")
         return 2
+    if apple_silicon():
+        print("Apple Silicon: installing mlx-whisper so Whisper runs on the Mac's GPU...")
+        if (run([vpy, "-m", "pip", "install", "-q", "--upgrade", "--no-deps", MLX_WHISPER]) != 0
+                or run([vpy, "-m", "pip", "install", "-q", "--upgrade"] + MLX_DEPS) != 0):
+            print("mlx-whisper failed to install; Whisper will use the CPU (slower but works).")
     nvidia = has_nvidia_gpu()
     if gpu is None:
         gpu = nvidia and platform.system() in ("Windows", "Linux")
