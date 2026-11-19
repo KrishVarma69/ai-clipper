@@ -1,0 +1,14 @@
+{
+  "name": "ai-clipper",
+  "displayName": "AI Clipper",
+  "version": "0.1.0",
+  "description": "Turn long videos (podcasts, interviews, stream VODs) into captioned 9:16 clips for TikTok, Reels and Shorts. Claude picks the moments; everything runs locally and free.",
+  "author": {
+    "name": "Mocdew",
+    "url": "https://github.com/Mocdew"
+  },
+  "homepage": "https://github.com/Mocdew/ai-clipper",
+  "repository": "https://github.com/Mocdew/ai-clipper",
+  "license": "MIT",
+  "keywords": ["clipping", "video", "tiktok", "reels", "shorts", "captions", "whisper", "ffmpeg", "podcast", "twitch"]
+}

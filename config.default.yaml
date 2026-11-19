@@ -1,0 +1,160 @@
+# =====================================================================
+# AI Clipper - default settings
+# =====================================================================
+# Don't edit this file (plugin updates replace it). To change a setting,
+# create a file called "clipper.yaml" in the folder where you run the
+# clipper and copy only the lines you want to change. Example:
+#
+#   min_seconds: 15
+#   reframe: split
+#   captions:
+#     font_size: 90
+#
+# Campaign files (./campaigns/<name>.yaml) override both.
+# =====================================================================
+
+# What kind of content you clip. Used as a hint when picking moments.
+# Examples: podcast, gaming, interview, finance, fitness, comedy, sports
+niche: podcast
+
+# How many clips to make per video when you don't say a number.
+clips_per_video: 5
+
+# Shortest and longest clip length, in seconds.
+min_seconds: 20
+max_seconds: 60
+
+# ---------------------------------------------------------------------
+# Download
+# ---------------------------------------------------------------------
+# Highest video quality to download (1080 is plenty for 9:16 clips).
+max_height: 1080
+
+# ---------------------------------------------------------------------
+# Speech-to-text (Whisper, runs on your computer)
+# ---------------------------------------------------------------------
+# Model size: tiny, base, small, medium, large-v3, distil-large-v3.
+# Bigger = more accurate but slower. "small" is a good balance.
+# For videos over 1 hour on a laptop, "base" is much faster.
+whisper_model: small
+
+# Where Whisper runs: auto (NVIDIA GPU if found, else CPU), cpu, or cuda.
+# Apple Silicon Macs use the CPU (it's still fast).
+whisper_device: auto
+
+# Spoken language code (en, es, pt, de, fr, ...). Leave empty to auto-detect.
+language:
+
+# ---------------------------------------------------------------------
+# Vertical framing (1080x1920, 30 fps)
+# ---------------------------------------------------------------------
+# face  = follow the speaker's face (best for podcasts / interviews)
+# blur  = whole frame in the middle with a blurred copy behind it
+# split = facecam on top, gameplay below (best for streams)
+reframe: face
+
+face:
+  # How often to look for faces, in seconds.
+  sample_every: 0.5
+  # If faces are found in less than this share of samples, use "blur".
+  min_face_ratio: 0.3
+  # Ignore speaker moves shorter than this (seconds) to avoid jumpy crops.
+  min_shot_seconds: 2.0
+
+split:
+  # Boxes are [left, top, width, height] as fractions of the source frame
+  # (0.0 to 1.0). Use "clipper_cli.py frame <folder>" to get a screenshot
+  # with a grid so you can read these numbers off.
+  facecam_box: [0.0, 0.0, 0.25, 0.30]
+  gameplay_box: [0.0, 0.0, 1.0, 1.0]
+  # How much of the vertical frame the facecam takes (0.35 = top 35%).
+  facecam_share: 0.35
+
+# Background blur strength for "blur" mode (and the face fallback).
+blur_strength: 25
+
+# ---------------------------------------------------------------------
+# Captions (burned into the video)
+# ---------------------------------------------------------------------
+captions:
+  enabled: true
+  font: Arial
+  font_size: 82
+  bold: true
+  uppercase: true
+  # Words shown at once. 2-4 reads best on phones.
+  words_per_line: 3
+  # Start a new line when the speaker pauses longer than this (seconds).
+  pause_break: 0.6
+  # Vertical position of the caption, as a share of the height from the top.
+  # 0.70 = a bit below the middle (clear of TikTok's buttons and text).
+  position_y: 0.70
+  # Colors as #RRGGBB.
+  color: "#FFFFFF"
+  highlight_color: "#FFE600"
+  outline_color: "#000000"
+  outline: 7
+  shadow: 2
+  # Color the word being spoken right now (karaoke style).
+  karaoke: true
+
+# ---------------------------------------------------------------------
+# Anti-spam variation
+# ---------------------------------------------------------------------
+# Platforms flag accounts that post identical-looking templates. When on,
+# every clip gets slightly different caption size/position and a tiny zoom,
+# and captions/hashtags are rotated so no two posts read the same.
+variation:
+  enabled: true
+  font_size_jitter: 0.08    # up to +/- 8% caption size
+  position_jitter: 0.03     # up to +/- 3% of the height
+  zoom_max: 1.04            # random zoom between 1.00 and this
+
+# ---------------------------------------------------------------------
+# Video encoding
+# ---------------------------------------------------------------------
+video:
+  fps: 30
+  crf: 20             # lower = better quality, bigger file (18-23 is good)
+  preset: veryfast    # ultrafast/veryfast/fast/medium (slower = smaller file)
+  audio_bitrate: 160k
+
+# ---------------------------------------------------------------------
+# Moment picking when running the script OUTSIDE Claude Code
+# ---------------------------------------------------------------------
+# Inside Claude Code, Claude picks the moments itself (no API key needed).
+# Standalone ("clipper_cli.py run ...") can use:
+#   heuristic = no AI, uses loudness + keywords (free, offline)
+#   groq / gemini / openai = an LLM through an OpenAI-compatible API
+ai:
+  provider: heuristic
+  # Leave empty to use the provider default:
+  #   groq:   openai/gpt-oss-120b      (key in GROQ_API_KEY)
+  #   gemini: gemini-flash-latest      (key in GEMINI_API_KEY)
+  #   openai: gpt-5.4-mini             (key in OPENAI_API_KEY)
+  model:
+  # Name of the environment variable that holds your key (optional override).
+  api_key_env:
+  # Any other OpenAI-compatible server (e.g. a local Ollama/LM Studio).
+  base_url:
+  temperature: 0.4
+
+# ---------------------------------------------------------------------
+# Campaign (usually set by a ./campaigns/<name>.yaml file instead)
+# ---------------------------------------------------------------------
+campaign:
+  name:
+  brief:
+  required_mentions: []   # e.g. ["@creatorname"]
+  required_hashtags: []   # e.g. ["#sponsored", "#brandname"]
+  extra_hashtags: []      # nice-to-have tags, rotated per post
+  banned_words: []        # moments containing these are skipped
+
+# ---------------------------------------------------------------------
+# Posting schedule (used for post_queue.csv; nothing is posted for you)
+# ---------------------------------------------------------------------
+schedule:
+  platforms: [tiktok, instagram, youtube]
+  posts_per_day: 3
+  first_post_hour: 10       # 24h clock, your local time
+  hours_between_posts: 4

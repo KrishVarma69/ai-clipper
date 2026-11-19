@@ -1,0 +1,15 @@
+{
+  "name": "ai-clipper",
+  "description": "AI Clipper: long videos to captioned vertical clips, inside Claude Code.",
+  "owner": {
+    "name": "Mocdew",
+    "url": "https://github.com/Mocdew"
+  },
+  "plugins": [
+    {
+      "name": "ai-clipper",
+      "source": "./",
+      "description": "Turn long videos into captioned 9:16 clips for TikTok, Reels and Shorts. Claude picks the moments; everything runs locally and free."
+    }
+  ]
+}

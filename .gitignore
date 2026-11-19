@@ -1,0 +1,21 @@
+# Outputs and user files (never commit clips or campaign briefs)
+clips-output/
+campaigns/
+clipper.yaml
+*.mp4
+*.mkv
+*.webm
+*.wav
+*.m4a
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
