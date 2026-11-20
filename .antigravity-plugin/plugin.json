@@ -1,0 +1,22 @@
+{
+  "$schema": "https://antigravity.google/schemas/v1/plugin.json",
+  "name": "ai-clipper",
+  "displayName": "AI Clipper",
+  "version": "0.3.0",
+  "description": "Turn long videos (podcasts, interviews, stream VODs) into captioned 9:16 clips for TikTok, Reels and Shorts. The agent picks the moments; everything runs locally and free.",
+  "logo": ".claude-plugin/icon.png",
+  "author": {
+    "name": "Mocdew",
+    "url": "https://github.com/Mocdew"
+  },
+  "homepage": "https://github.com/Mocdew/ai-clipper",
+  "repository": "https://github.com/Mocdew/ai-clipper",
+  "license": "MIT",
+  "keywords": ["clipping", "video", "tiktok", "reels", "shorts", "captions", "whisper", "ffmpeg", "podcast", "twitch"],
+  "skills": "antigravity/skills",
+  "suggestedPrompts": [
+    "Set up AI Clipper",
+    "Make 5 shorts from this video: <link>",
+    "Clip this Twitch VOD into 8 TikToks, gaming split screen: <link>"
+  ]
+}

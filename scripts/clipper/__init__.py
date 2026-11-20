@@ -6,4 +6,4 @@ import os as _os
 # before huggingface_hub is imported.
 _os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"

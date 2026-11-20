@@ -1,4 +1,4 @@
-# AI Clipper for Claude Code
+# AI Clipper for Claude Code (and Antigravity / Gemini CLI)
 
 Turn long videos (podcasts, interviews, Twitch / Kick / YouTube stream VODs) into
 **finished, captioned 9:16 clips** for TikTok, Instagram Reels and YouTube Shorts with
@@ -32,7 +32,7 @@ You get:
 
 | | Mac | Windows | Linux |
 |---|---|---|---|
-| [Claude Code](https://code.claude.com) | yes | yes | yes |
+| [Claude Code](https://code.claude.com) (or Antigravity CLI, see below) | yes | yes | yes |
 | Python 3.10+ | `brew install python@3.12` | `winget install Python.Python.3.12` | `sudo apt install python3 python3-venv` |
 | ffmpeg **with libass** (captions) | `brew install ffmpeg-full` | `winget install Gyan.FFmpeg` | `sudo apt install ffmpeg` |
 | deno (YouTube downloads, optional) | `brew install deno` | `winget install DenoLand.Deno` | `curl -fsSL https://deno.land/install.sh \| sh` |
@@ -64,6 +64,37 @@ in your user data folder (not inside the plugin, so updates don't wipe it):
 ```
 /ai-clipper:setup
 ```
+
+### Antigravity CLI (Google's Gemini agent)
+
+Gemini CLI was replaced by Antigravity CLI (`agy`). The same repo installs there as a
+native plugin:
+
+```
+agy plugin install https://github.com/Mocdew/ai-clipper
+```
+
+Then, in an `agy` session, run the setup and clip:
+
+```
+/ai-clipper-setup
+/ai-clipping https://www.youtube.com/watch?v=... 5
+/ai-clipper-campaign acme-podcast
+```
+
+Everything else in this README applies; where it says `/ai-clipper:clip`, use
+`/ai-clipping` (or just ask: *"make 5 shorts from <link>"*), and Gemini picks the moments
+instead of Claude.
+
+### Gemini CLI (legacy)
+
+If you still have Gemini CLI (e.g. through Gemini Code Assist for enterprise):
+
+```
+gemini extensions install https://github.com/Mocdew/ai-clipper
+```
+
+Then ask *"set up AI Clipper"* once, and *"make 5 shorts from <link>"*.
 
 ## Usage
 
@@ -210,6 +241,7 @@ Where things live: outputs in `./clips-output/`; the Python environment in
 
 ```
 claude plugin validate .
+agy plugin validate --strict .     # Antigravity manifest (.antigravity-plugin/plugin.json)
 python3 tests/e2e_test.py          # run with the venv python, see the file header
 ```
 

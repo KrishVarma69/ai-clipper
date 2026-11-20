@@ -1,0 +1,5 @@
+{
+  "name": "ai-clipper",
+  "version": "0.3.0",
+  "description": "Turn long videos (podcasts, interviews, stream VODs) into captioned 9:16 clips for TikTok, Reels and Shorts. The agent picks the moments; everything runs locally and free."
+}

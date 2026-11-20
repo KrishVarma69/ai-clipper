@@ -1,8 +1,6 @@
 ---
 name: ai-clipping
-description: Turns a long video (podcast, interview, Twitch/Kick/YouTube stream VOD, or a local file) into finished, captioned 9:16 vertical clips for TikTok, Instagram Reels and YouTube Shorts, with Claude picking the best moments. Use when the user asks to clip a video, make shorts/reels/TikToks from a video or link, find viral moments, or cut a podcast or stream into clips.
-when_to_use: 'Examples: "clip this video", "make 5 shorts from this podcast", "cut this stream into TikToks", "find the best moments in this link", "make reels from this file".'
-argument-hint: "<url-or-file> [number] [extras]"
+description: 'Turns a long video (podcast, interview, Twitch/Kick/YouTube stream VOD, or a local file) into finished, captioned 9:16 vertical clips for TikTok, Instagram Reels and YouTube Shorts, with the AI picking the best moments. Use when the user asks to clip a video, make shorts/reels/TikToks from a video or link, find viral moments, or cut a podcast or stream into clips. Examples: "clip this video", "make 5 shorts from this podcast", "cut this stream into TikToks", "find the best moments in this link", "make reels from this file".'
 ---
 
 # AI Clipping workflow
@@ -24,6 +22,15 @@ Posting stays manual (or through a scheduler like Postiz/Buffer using `post_queu
 CLI = python3 "${CLAUDE_PLUGIN_ROOT}/scripts/clipper_cli.py"
 ```
 
+- **Plugin root.** In Claude Code, `${CLAUDE_PLUGIN_ROOT}` is set for you. In any other
+  agent (Antigravity CLI, Gemini CLI, ...) it isn't: the plugin root is the folder two
+  levels above this SKILL.md (`<plugin root>/skills/ai-clipping/SKILL.md`). Usual install
+  folders: `~/.gemini/config/plugins/ai-clipper` (Antigravity CLI) or
+  `~/.gemini/extensions/ai-clipper` (Gemini CLI); on Windows they're under
+  `%USERPROFILE%\.gemini\`. Use that absolute path everywhere this file or the files it
+  points to say `${CLAUDE_PLUGIN_ROOT}`.
+- Tool names below are Claude Code's (Bash, Read, Write). Use your own shell, file-reading
+  and file-writing tools.
 - On Windows use `python` instead of `python3` (or `py -3` if `python` isn't found).
 - Always keep the quotes around the script path and around every folder/file path:
   paths can contain spaces.
@@ -61,8 +68,9 @@ explaining each step in plain language, then come back here.
    video is over 1 hour and they didn't pick a model or range, suggest `--model base` or a
    time range, then continue with what they asked for (don't wait unless they asked you to).
    For a local file this is instant. For a `.txt` batch, probe prints one line per link.
-2. Run prepare **in the background** (Bash tool with `run_in_background: true`) so it
-   can't hit the command timeout:
+2. Run prepare **in the background** (Bash tool with `run_in_background: true`; in other
+   agents, your shell tool's background option, or on Mac/Linux append
+   `> "<folder>/prepare.out" 2>&1 &`) so it can't hit the command timeout:
    `CLI prepare "<source>" --out "<folder from probe>" [--start ..] [--end ..] [--model ..] [--campaign ..]`
    For a batch `.txt`, run `CLI prepare "links.txt"` without `--out`; it prints one
    `OUTPUT_FOLDER:` line per video and `BATCH_READY: [...]` at the end.
@@ -143,6 +151,10 @@ Keep it short:
   posting. `post_queue.csv` has a suggested schedule for a scheduler like Postiz or Buffer."
 - one line: post each clip manually, follow the campaign brief, and don't post the same file
   to several accounts.
+
+## Campaigns
+If the user wants to save a campaign brief (required mentions, hashtags, banned words),
+read `${CLAUDE_PLUGIN_ROOT}/commands/campaign.md` and follow it.
 
 ## Standalone (no Claude)
 Users can also run `CLI run "<source>" --clips 5 --ai heuristic` (or `--ai groq|gemini|openai`
