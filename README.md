@@ -163,6 +163,24 @@ Defaults live in [`config.default.yaml`](config.default.yaml), every setting com
 in plain English. To change one, create `clipper.yaml` in the folder you work from and copy
 just the lines you want to change. Campaign files override both.
 
+## Weak or older computers (lite mode)
+
+AI Clipper checks the computer on every run. On a machine without an Apple Silicon or
+NVIDIA GPU that has 4 or fewer CPU threads (or 8 GB RAM or less with 4 or fewer cores), it
+switches to **lite** mode automatically:
+
+- Whisper `base` with greedy decoding (beam 1) and one CPU core left free
+- Whisper and ffmpeg run at low priority, so the computer stays usable
+- 720p downloads, and face tracking checks one frame per second
+- Clips are encoded on the graphics chip (Intel Quick Sync, AMD or NVIDIA) when it works,
+  otherwise with a faster x264 preset
+
+The trade-off: captions can have a few more transcription mistakes, and face-tracked clips
+are a little softer (cropped from 720p). `probe` and `check` say which mode is active. To
+choose it yourself, say "lite mode" / "my PC is slow" to Claude, pass `--performance lite`
+or `--performance normal`, or put `performance: lite` (or `normal`) in `clipper.yaml`. Any
+setting in `clipper.yaml` (for example `max_height: 1080`) overrides the lite value.
+
 ## Speed tips
 
 - **Long VODs:** use a time range (`only 1:00:00 to 2:30:00`): only that part is
@@ -170,6 +188,7 @@ just the lines you want to change. Campaign files override both.
 - **Smaller model:** say `fast` (uses Whisper `base`). `small` is the default; `medium`
   is more accurate but ~3x slower.
 - **NVIDIA GPU:** detected automatically, often 5-10x faster transcription.
+- **Slow computer:** see lite mode above (`--performance lite`).
 - **Re-runs are cached:** download, transcription and finished clips are reused. Ask for
   different clips from the same video and only the rendering runs again.
 - Rough timing (Apple M2, `small`, measured): on the Mac's GPU, transcription takes about a
@@ -227,6 +246,7 @@ integrations.
 | "can't burn in captions (built without libass)" | Mac: `brew install ffmpeg-full`. Windows: the Gyan build has it. Linux: distro ffmpeg has it. |
 | Download failed | Update yt-dlp: re-run `/ai-clipper:setup`. YouTube also needs `deno`. Check the video isn't private, members-only or still live. |
 | Out of memory while transcribing | Say `fast` or use `--model base` (or `tiny`). |
+| Computer freezes or is very slow while clipping | Use lite mode: `--performance lite` or `performance: lite` in `clipper.yaml`. |
 | Captions in the wrong language | Set `language: en` (or your language code) in `clipper.yaml`. |
 | Face mode shows a blurred background | Faces were found in under 30% of frames (gameplay, B-roll), so it fell back to blur. Use split mode for streams. |
 | Clip cut too early or too late | Ask Claude to adjust it, or edit `moments.json` and render again. Times snap to word and sentence boundaries. |

@@ -17,6 +17,19 @@
 # Examples: podcast, gaming, interview, finance, fitness, comedy, sports
 niche: podcast
 
+# ---------------------------------------------------------------------
+# Performance: auto, lite or normal
+# ---------------------------------------------------------------------
+# lite = lighter settings for weak computers (old or cheap laptops):
+#   whisper_model base, whisper_beam_size 1, fewer Whisper threads,
+#   low process priority (the PC stays usable), 720p downloads,
+#   face.sample_every 1.0, and a hardware video encoder when one works
+#   (video.encoder auto, else libx264 with preset superfast).
+# auto = lite when the computer has no Apple Silicon or NVIDIA GPU and has
+#   4 or fewer CPU threads, or 8 GB RAM or less with 4 or fewer cores.
+# Any setting you put in clipper.yaml still wins over the lite values.
+performance: auto
+
 # How many clips to make per video when you don't say a number.
 clips_per_video: 5
 
@@ -37,6 +50,16 @@ max_height: 1080
 # Bigger = more accurate but slower. "small" is a good balance.
 # For videos over 1 hour on a laptop, "base" is much faster.
 whisper_model: small
+
+# Beam size when Whisper runs on an NVIDIA GPU or the CPU. 1 = greedy decoding:
+# noticeably faster, slightly less accurate. (The Mac GPU backend ignores this.)
+whisper_beam_size: 5
+
+# CPU threads for Whisper: auto (all of them) or a number.
+whisper_threads: auto
+
+# Run Whisper and ffmpeg below normal priority so the computer stays responsive.
+low_priority: false
 
 # Where Whisper runs: auto, mlx, cuda or cpu.
 # auto = the Mac's GPU on Apple Silicon (mlx-whisper), an NVIDIA GPU if found, else the CPU.
@@ -114,9 +137,13 @@ variation:
 # Video encoding
 # ---------------------------------------------------------------------
 video:
+  # libx264 = CPU (best quality per MB). auto = a hardware encoder if one works
+  # (NVIDIA h264_nvenc, Intel h264_qsv, AMD h264_amf, Mac h264_videotoolbox),
+  # else libx264. Or name one of those encoders directly.
+  encoder: libx264
   fps: 30
   crf: 20             # lower = better quality, bigger file (18-23 is good)
-  preset: veryfast    # ultrafast/veryfast/fast/medium (slower = smaller file)
+  preset: veryfast    # libx264 only: ultrafast/superfast/veryfast/fast/medium (slower = smaller file)
   audio_bitrate: 160k
 
 # ---------------------------------------------------------------------

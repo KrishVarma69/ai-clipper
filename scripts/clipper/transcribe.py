@@ -22,6 +22,8 @@ from .util import ClipperError, log, read_json, write_json
 CPU_FACTOR = {"tiny": 0.1, "base": 0.2, "small": 0.5, "medium": 1.3, "large-v3": 2.6,
               "large-v2": 2.6, "distil-large-v3": 0.9, "turbo": 1.0, "large-v3-turbo": 1.0}
 GPU_DIVISOR = 8.0
+# Greedy decoding (beam 1) vs the default beam 5. Rough guess, not measured here.
+BEAM1_FACTOR = 0.65
 MLX_FACTOR = {"tiny": 0.03, "base": 0.045, "small": 0.09, "medium": 0.22, "large-v3": 0.4,
               "large-v2": 0.4, "distil-large-v3": 0.15, "turbo": 0.15, "large-v3-turbo": 0.15}
 MLX_REPOS = {"tiny": "mlx-community/whisper-tiny-mlx", "base": "mlx-community/whisper-base-mlx",
@@ -76,6 +78,8 @@ def estimate_seconds(duration: float, cfg: dict) -> dict:
         f = CPU_FACTOR.get(model, 0.5)
         if dev == "cuda":
             f /= GPU_DIVISOR
+        if int(cfg.get("whisper_beam_size") or 5) <= 1:
+            f *= BEAM1_FACTOR
     trans = duration * f + 20
     return {"transcribe_s": trans, "device": dev, "model": model}
 
@@ -140,21 +144,22 @@ def _transcribe_mlx(samples, model_name: str, lang, offset: float) -> tuple[list
 
 
 def _transcribe_fw(samples, model_name: str, device: str, compute: str, lang, offset: float,
-                   duration: float) -> tuple[list[dict], str]:
+                   duration: float, beam: int = 5, threads: int | None = None) -> tuple[list[dict], str]:
     try:
         from faster_whisper import WhisperModel
     except ImportError:
         raise ClipperError("faster-whisper isn't installed. Run /ai-clipper:setup.")
 
-    log(f"Loading Whisper '{model_name}' on {device_label(device)} ({compute}). First run downloads the model...")
+    threads = max(1, threads or (os.cpu_count() or 4))
+    log(f"Loading Whisper '{model_name}' on {device_label(device)} ({compute}"
+        f"{f', {threads} threads' if device == 'cpu' else ''}, beam {beam}). First run downloads the model...")
     try:
-        model = WhisperModel(model_name, device=device, compute_type=compute,
-                             cpu_threads=max(1, (os.cpu_count() or 4)))
+        model = WhisperModel(model_name, device=device, compute_type=compute, cpu_threads=threads)
     except Exception as e:
         msg = str(e)
         if device == "cuda":
             log(f"CUDA failed ({msg[:120]}); falling back to CPU.")
-            model = WhisperModel(model_name, device="cpu", compute_type="int8")
+            model = WhisperModel(model_name, device="cpu", compute_type="int8", cpu_threads=threads)
         else:
             raise ClipperError(f"Couldn't load Whisper model '{model_name}': {msg[-300:]}")
 
@@ -162,7 +167,7 @@ def _transcribe_fw(samples, model_name: str, device: str, compute: str, lang, of
     segments_out = []
     segments, info = model.transcribe(samples, language=lang, word_timestamps=True,
                                       vad_filter=True, vad_parameters={"min_silence_duration_ms": 500},
-                                      beam_size=5, condition_on_previous_text=False)
+                                      beam_size=beam, condition_on_previous_text=False)
     total = info.duration or duration or 1
     last_pct = -5.0
     for seg in segments:
@@ -207,7 +212,10 @@ def transcribe(wav: Path, folder: Path, cfg: dict, offset: float, duration: floa
                 log(f"Mac GPU transcription failed ({str(e)[:160]}); falling back to the CPU (slower).")
                 device, compute = "cpu", "int8"
         if segments_out is None:
-            segments_out, language = _transcribe_fw(samples, model_name, device, compute, lang, offset, duration)
+            from .perf import whisper_threads
+            beam = max(1, int(cfg.get("whisper_beam_size") or 5))
+            segments_out, language = _transcribe_fw(samples, model_name, device, compute, lang, offset,
+                                                    duration, beam=beam, threads=whisper_threads(cfg))
     except (MemoryError, RuntimeError) as e:
         msg = str(e).lower()
         if isinstance(e, MemoryError) or "out of memory" in msg or "alloc" in msg:

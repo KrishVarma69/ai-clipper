@@ -49,7 +49,8 @@ From the user's request (or `$ARGUMENTS` when invoked as a command) work out:
 | reframe | config (`face`) | "gaming", "split screen", "facecam" -> `--reframe split`; "blur", "keep full frame" -> `--reframe blur`; "podcast", "follow the speaker" -> `--reframe face` |
 | campaign | none | "campaign: acme" -> `--campaign acme` (file `./campaigns/acme.yaml`) |
 | length | 20-60 s | "60 seconds max" -> `--max-seconds 60`; "at least 30s" -> `--min-seconds 30` |
-| whisper model | `small` | "fast", "quick" -> `--model base`; "most accurate" -> `--model medium` |
+| whisper model | `small` (`base` in lite mode) | "fast", "quick" -> `--model base`; "most accurate" -> `--model medium` |
+| performance | `auto` (lite on weak computers) | "my PC is slow", "old laptop", "lite mode", "it froze last time" -> `--performance lite`; "full quality" -> `--performance normal` |
 | facecam box | config | "facecam is top right" -> see Split mode below |
 
 If no source was given, ask for it. Otherwise don't ask questions: choose sensible
@@ -64,14 +65,16 @@ explaining each step in plain language, then come back here.
 ## Step 1: prepare (download, audio, transcript, loudness)
 
 1. `CLI probe "<source>" [--start .. --end ..] [--model ..]` prints JSON with the title,
-   duration, output `folder` and a time `estimate`. Tell the user the estimate. If the
+   duration, output `folder` and a time `estimate`. Tell the user the estimate, and if it
+   says `Performance: LITE`, say in one line that lighter settings are on for this
+   computer (pass the same `--performance` flag to prepare and render). If the
    video is over 1 hour and they didn't pick a model or range, suggest `--model base` or a
    time range, then continue with what they asked for (don't wait unless they asked you to).
    For a local file this is instant. For a `.txt` batch, probe prints one line per link.
 2. Run prepare **in the background** (Bash tool with `run_in_background: true`; in other
    agents, your shell tool's background option, or on Mac/Linux append
    `> "<folder>/prepare.out" 2>&1 &`) so it can't hit the command timeout:
-   `CLI prepare "<source>" --out "<folder from probe>" [--start ..] [--end ..] [--model ..] [--campaign ..]`
+   `CLI prepare "<source>" --out "<folder from probe>" [--start ..] [--end ..] [--model ..] [--campaign ..] [--performance ..]`
    For a batch `.txt`, run `CLI prepare "links.txt"` without `--out`; it prints one
    `OUTPUT_FOLDER:` line per video and `BATCH_READY: [...]` at the end.
 3. While it runs, check progress with `CLI status "<folder>"` about once a minute and tell
@@ -125,7 +128,7 @@ good moments; then pick fewer and say why.
 
 ## Step 3: render
 
-`CLI render "<folder>" --moments "<folder>/moments.json" [--reframe face|blur|split] [--campaign ..] [--facecam-box l,t,w,h]`
+`CLI render "<folder>" --moments "<folder>/moments.json" [--reframe face|blur|split] [--campaign ..] [--facecam-box l,t,w,h] [--performance ..]`
 
 Rendering takes roughly 10-40 s per clip; for more than ~6 clips run it in the background
 too. It prints `WARNING:` lines when it had to adjust a moment (too long, overlapping,

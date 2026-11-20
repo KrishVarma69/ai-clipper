@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """End-to-end test for AI Clipper. Not part of the plugin runtime.
 
-    python3 tests/e2e_test.py [--keep] [--workdir "/tmp/clipper test"]
+    python3 tests/e2e_test.py [--keep] [--lite] [--workdir "/tmp/clipper test"]
 
 Creates a 3-minute synthetic video (test pattern + tone with a loud section), a fake
 transcript.json with word timestamps, then runs prepare -> transcript -> render for all
@@ -160,12 +160,15 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--keep", action="store_true")
     ap.add_argument("--workdir")
+    ap.add_argument("--lite", action="store_true", help="run everything with performance: lite")
     a = ap.parse_args()
     base = Path(a.workdir) if a.workdir else Path(tempfile.mkdtemp()) / "clipper test (spaces) dir"
     if base.exists():
         shutil.rmtree(base)
     base.mkdir(parents=True)
     print(f"Work dir: {base}")
+    if a.lite:
+        (base / "clipper.yaml").write_text("performance: lite\n", encoding="utf-8")
 
     print("\n[1] check")
     p = run(["check"], base, expect_ok=False)

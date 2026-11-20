@@ -1,12 +1,14 @@
 """Reframe to 1080x1920 and encode each clip in one ffmpeg pass."""
 from __future__ import annotations
 
+import platform
 import random
 import statistics
+import subprocess
 from pathlib import Path
 
 from .captions import write_ass
-from .util import ClipperError, log, need_ffmpeg, run_ffmpeg, slugify
+from .util import ClipperError, _bin, log, need_ffmpeg, run_ffmpeg, slugify
 
 OUT_W, OUT_H = 1080, 1920
 
@@ -14,6 +16,52 @@ OUT_W, OUT_H = 1080, 1920
 def _even(x: float) -> int:
     v = int(round(x))
     return v - (v % 2)
+
+
+# ------------------------------------------------------------------ encoders
+# Hardware encoders to try for "encoder: auto", in order. They take the encoding work off
+# the CPU (Intel Quick Sync, AMD AMF, NVIDIA NVENC, Apple VideoToolbox).
+HW_ENCODERS = {"Darwin": ["h264_videotoolbox"],
+               "Windows": ["h264_nvenc", "h264_qsv", "h264_amf"],
+               "Linux": ["h264_nvenc", "h264_qsv"]}
+HW_BITRATE = ["-b:v", "8M", "-maxrate", "12M", "-bufsize", "16M"]
+_encoder_cache: dict[str, str] = {}
+
+
+def encoder_args(encoder: str, vcfg: dict) -> list[str]:
+    """ffmpeg video-encoder arguments (codec, quality, profile)."""
+    if encoder == "libx264":
+        return ["-c:v", "libx264", "-preset", str(vcfg.get("preset", "veryfast")),
+                "-crf", str(vcfg.get("crf", 20)), "-profile:v", "high"]
+    extra = {"h264_nvenc": ["-preset", "p4"],
+             "h264_qsv": ["-preset", "veryfast"],
+             "h264_amf": ["-quality", "speed"]}.get(encoder, [])
+    return ["-c:v", encoder] + extra + HW_BITRATE + ["-profile:v", "high"]
+
+
+def _encoder_works(encoder: str, vcfg: dict) -> bool:
+    """Encode half a second of black 1080x1920 video: listed encoders often have no hardware."""
+    cmd = [_bin("ffmpeg"), "-hide_banner", "-loglevel", "error", "-f", "lavfi",
+           "-i", f"color=c=black:s={OUT_W}x{OUT_H}:r=30", "-t", "0.5", "-vf", "format=yuv420p",
+           *encoder_args(encoder, vcfg), "-f", "null", "-"]
+    try:
+        return subprocess.run(cmd, capture_output=True, timeout=30).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
+
+
+def pick_encoder(vcfg: dict) -> str:
+    want = str(vcfg.get("encoder") or "libx264").strip().lower()
+    if want in ("libx264", "x264", "cpu", "software"):
+        return "libx264"
+    if want in _encoder_cache:
+        return _encoder_cache[want]
+    candidates = HW_ENCODERS.get(platform.system(), []) if want in ("auto", "hardware", "gpu") else [want]
+    chosen = next((e for e in candidates if _encoder_works(e, vcfg)), "libx264")
+    if want not in ("auto", "hardware", "gpu") and chosen != want:
+        log(f"Encoder '{want}' doesn't work on this computer; using libx264 (CPU).")
+    _encoder_cache[want] = chosen
+    return chosen
 
 
 # ------------------------------------------------------------- face detection
@@ -37,10 +85,14 @@ def face_track(video: str, start: float, end: float, src_w: int, src_h: int, cfg
     step_frames = max(1, int(round(every * fps)))
     frame_i = 0
     while t < end:
-        ok, frame = cap.read()
-        if not ok:
+        # grab() only advances; retrieve() does the costly conversion to an image, so
+        # only do it for the frames we actually look at.
+        if not cap.grab():
             break
         if frame_i % step_frames == 0:
+            ok, frame = cap.retrieve()
+            if not ok:
+                break
             samples += 1
             small = cv2.resize(frame, (det_w, max(2, int(frame.shape[0] * scale))))
             gray = cv2.equalizeHist(cv2.cvtColor(small, cv2.COLOR_BGR2GRAY))
@@ -166,6 +218,7 @@ def render_clips(meta: dict, moments: list[dict], words: list[dict], folder: Pat
     use_var = bool(var.get("enabled", True))
     mode_cfg = cfg.get("reframe", "face")
     need_ffmpeg(captions=bool(cap_cfg.get("enabled", True)))
+    encoder = None  # picked on the first clip that needs rendering
     results = []
     for i, m in enumerate(moments, 1):
         rng = random.Random(f"{slugify(meta.get('title', ''))}-{i}-{m['start']}")
@@ -203,16 +256,30 @@ def render_clips(meta: dict, moments: list[dict], words: list[dict], folder: Pat
             log(f"[{i}/{len(moments)}] {out.name} exists (cached)")
         else:
             log(f"[{i}/{len(moments)}] Rendering {out.name} ({dur:.0f}s, {mode}{', ' + note if note else ''})")
+            if encoder is None:
+                encoder = pick_encoder(vcfg)
+                if encoder != "libx264":
+                    log(f"Encoding with the hardware encoder {encoder}")
             fg = build_filter(mode, src_w, src_h, cfg, zoom, crop_expr, ass_name, fps)
-            # Run with the work folder as cwd and the .ass name relative: avoids the
-            # Windows drive-letter escaping problem in the subtitles filter.
-            run_ffmpeg(["-ss", f"{m['start']:.3f}", "-i", video, "-t", f"{dur:.3f}",
-                        "-filter_complex", fg, "-map", "[v]", "-map", "0:a:0?",
-                        "-c:v", "libx264", "-preset", str(vcfg.get("preset", "veryfast")),
-                        "-crf", str(vcfg.get("crf", 20)), "-profile:v", "high", "-r", str(fps),
-                        "-c:a", "aac", "-b:a", str(vcfg.get("audio_bitrate", "160k")), "-ar", "48000",
-                        "-movflags", "+faststart", str(out.resolve())],
-                       cwd=work, what=f"Rendering clip {i}")
+
+            def encode(enc: str) -> None:
+                # Run with the work folder as cwd and the .ass name relative: avoids the
+                # Windows drive-letter escaping problem in the subtitles filter.
+                run_ffmpeg(["-ss", f"{m['start']:.3f}", "-i", video, "-t", f"{dur:.3f}",
+                            "-filter_complex", fg, "-map", "[v]", "-map", "0:a:0?",
+                            *encoder_args(enc, vcfg), "-r", str(fps),
+                            "-c:a", "aac", "-b:a", str(vcfg.get("audio_bitrate", "160k")), "-ar", "48000",
+                            "-movflags", "+faststart", str(out.resolve())],
+                           cwd=work, what=f"Rendering clip {i}")
+
+            try:
+                encode(encoder)
+            except ClipperError as e:
+                if encoder == "libx264":
+                    raise
+                log(f"{encoder} failed ({str(e).splitlines()[-1][:160]}); using libx264 (CPU) from now on.")
+                encoder = "libx264"
+                encode(encoder)
             log.progress("render", 100.0 * i / len(moments), out.name)
         results.append({**m, "file": f"clips/{out.name}", "reframe": mode, "reframe_note": note,
                         "zoom": round(zoom, 3), "caption_size": round(size), "caption_y": round(pos_y, 3)})

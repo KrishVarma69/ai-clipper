@@ -69,8 +69,16 @@ def load_config(cwd: Path | None = None, campaign: str | None = None,
     cwd = Path(cwd or Path.cwd())
     cfg = _load_yaml(DEFAULT_CONFIG)
     user = cwd / "clipper.yaml"
-    if user.exists():
-        cfg = deep_merge(cfg, _load_yaml(user))
+    user_cfg = _load_yaml(user) if user.exists() else {}
+    # The performance profile sits between the defaults and the user's own settings,
+    # so a value set in clipper.yaml, a campaign or a CLI flag always wins over it.
+    from .perf import LITE_PRESET, resolve_profile
+    requested = (overrides or {}).get("performance") or user_cfg.get("performance") or cfg.get("performance")
+    profile = resolve_profile(requested)
+    if profile["name"] == "lite":
+        cfg = deep_merge(cfg, LITE_PRESET)
+    cfg = deep_merge(cfg, user_cfg)
+    cfg["_profile"] = profile
     cfg = apply_campaign(cfg, {})
     if campaign:
         path = find_campaign(campaign, cwd)

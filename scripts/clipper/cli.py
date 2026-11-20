@@ -26,6 +26,8 @@ def _sources(src: str) -> list[str]:
 def _cfg(a, folder: Path | None = None) -> dict:
     from .config import load_config
     over = {}
+    if getattr(a, "performance", None):
+        over["performance"] = a.performance
     if getattr(a, "model", None):
         over["whisper_model"] = a.model
     if getattr(a, "reframe", None):
@@ -45,7 +47,10 @@ def _cfg(a, folder: Path | None = None) -> dict:
     campaign = getattr(a, "campaign", None)
     if not campaign and folder:
         campaign = (read_json(folder / "meta.json", {}) or {}).get("campaign")
-    return load_config(Path.cwd(), campaign=campaign, overrides=over)
+    cfg = load_config(Path.cwd(), campaign=campaign, overrides=over)
+    from .perf import lower_priority
+    lower_priority(cfg)
+    return cfg
 
 
 def _folder(path: str) -> Path:
@@ -56,11 +61,12 @@ def _folder(path: str) -> Path:
 
 
 def _estimate_text(duration: float, cfg: dict) -> str:
+    from .perf import profile_text
     from .transcribe import device_label, estimate_seconds
     est = estimate_seconds(duration, cfg)
     t = est["transcribe_s"]
     msg = (f"Video length {fmt_time(duration)}. Transcribing with '{est['model']}' on {device_label(est['device'])} "
-           f"takes roughly {max(1, round(t / 60))} min (plus download time).")
+           f"takes roughly {max(1, round(t / 60))} min (plus download time). {profile_text(cfg)}")
     if duration > 3600 and est["model"] not in ("tiny", "base") and est["device"] == "cpu":
         msg += (" Tip: for videos over 1 hour use --model base, or a time range like "
                 "--start 1:00:00 --end 2:30:00, to go much faster.")
@@ -72,6 +78,12 @@ def cmd_check(a) -> int:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
     import setup_env
     st = setup_env.report()
+    if st.get("packages_ok"):
+        try:
+            p = _cfg(a)["_profile"]
+            print(f"Performance:     {p['name']} ({p['reason']})")
+        except Exception:
+            pass
     setup_env.print_report(st)
     return 0 if st["ready"] else 1
 
@@ -108,6 +120,8 @@ def prepare_one(src: str, a, cfg: dict, out: Path | None) -> Path:
     log.set_folder(out)
     print(f"OUTPUT_FOLDER: {out}", flush=True)
     log(f"=== prepare {src} (ai-clipper {__version__}) ===", echo=False)
+    from .perf import profile_text
+    log(profile_text(cfg))
     t0 = time.time()
     meta = get_video(src, out, cfg, start, end, force=a.force)
     if getattr(a, "campaign", None):
@@ -345,6 +359,8 @@ def build_parser() -> argparse.ArgumentParser:
 
     def common(p, clips=True):
         p.add_argument("--campaign", help="campaign name (./campaigns/<name>.yaml)")
+        p.add_argument("--performance", choices=["auto", "lite", "normal"],
+                       help="lite = lighter settings for weak computers (auto detects them)")
         p.add_argument("--model", help="whisper model: tiny, base, small, medium, large-v3")
         p.add_argument("--language", help="spoken language code, e.g. en")
         p.add_argument("--reframe", choices=["face", "blur", "split"])
