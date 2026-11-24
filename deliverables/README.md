@@ -19,9 +19,14 @@ Each has a `_cover.jpg` and an `_upload-text.md` (title, description, hashtags, 
 - `ep1-short1/2/3.mp4` (vertical) + covers
 - `upload-text.md` (titles, description with chapters, Shorts table)
 
+## infinite-iq-in-history/ep2-titanic/
+- `ep2-titanic-LONG.mp4` (16:9, 7:53) + `ep2-titanic-thumbnail.jpg`
+- `ep2-titanic-short1/2/3.mp4` (vertical) + covers
+- `upload-text.md` (titles, description with chapters, real-history notes, Shorts table), `script.txt`
+
 ## what-if-memory/ (for a separate What If channel)
 - `what-if-memory-LONG.mp4` (16:9, 6:05) + `thumbnail.jpg`
 - `what-if-memory-SHORT.mp4` (vertical) + `short_cover.jpg`
 - `upload-text.md`, `script.txt`
 
-The two long videos were re-encoded to fit GitHub's 100 MB file limit (visually near-identical).
+The long videos were re-encoded to fit GitHub's 100 MB file limit (visually near-identical).
