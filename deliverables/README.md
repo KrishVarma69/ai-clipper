@@ -39,6 +39,11 @@ Each has a `_cover.jpg` and an `_upload-text.md` (title, description, hashtags, 
 - `ep5-antarctica-short1/2/3.mp4` (vertical) + covers
 - `upload-text.md`, `script.txt`
 
+## infinite-iq-in-history/ep6-castle/
+- `ep6-castle-LONG.mp4` (16:9, 7:17) + `ep6-castle-thumbnail.jpg`
+- `ep6-castle-short1/2/3.mp4` (vertical) + covers
+- `upload-text.md`, `script.txt`
+
 ## what-if-memory/ (for a separate What If channel)
 - `what-if-memory-LONG.mp4` (16:9, 6:05) + `thumbnail.jpg`
 - `what-if-memory-SHORT.mp4` (vertical) + `short_cover.jpg`
