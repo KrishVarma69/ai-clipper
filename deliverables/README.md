@@ -59,6 +59,13 @@ Each has a `_cover.jpg` and an `_upload-text.md` (title, description, hashtags, 
 - `ep9-egypt-short1/2/3.mp4` (vertical) + covers
 - `upload-text.md`, `script.txt`
 
+## infinite-iq-in-history/ep10-thermopylae/ (series finale)
+- `ep10-thermopylae-LONG.mp4` (16:9, 7:24) + `ep10-thermopylae-thumbnail.jpg`
+- `ep10-thermopylae-short1/2/3.mp4` (vertical) + covers
+- `upload-text.md`, `script.txt`
+
+**Infinite IQ in History is complete: 10 episodes, 30 Shorts.** Episode order for the playlist: Rome, Titanic, Black Death, Pompeii, Antarctica, Castle, Apollo 13, Dunkirk, Egypt, Thermopylae.
+
 ## what-if-memory/ (for a separate What If channel)
 - `what-if-memory-LONG.mp4` (16:9, 6:05) + `thumbnail.jpg`
 - `what-if-memory-SHORT.mp4` (vertical) + `short_cover.jpg`
