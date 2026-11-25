@@ -24,6 +24,11 @@ Each has a `_cover.jpg` and an `_upload-text.md` (title, description, hashtags, 
 - `ep2-titanic-short1/2/3.mp4` (vertical) + covers
 - `upload-text.md` (titles, description with chapters, real-history notes, Shorts table), `script.txt`
 
+## infinite-iq-in-history/ep3-black-death/
+- `ep3-black-death-LONG.mp4` (16:9, 6:52) + `ep3-black-death-thumbnail.jpg`
+- `ep3-black-death-short1/2/3.mp4` (vertical) + covers
+- `upload-text.md`, `script.txt`
+
 ## what-if-memory/ (for a separate What If channel)
 - `what-if-memory-LONG.mp4` (16:9, 6:05) + `thumbnail.jpg`
 - `what-if-memory-SHORT.mp4` (vertical) + `short_cover.jpg`
