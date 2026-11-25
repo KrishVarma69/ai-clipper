@@ -29,6 +29,11 @@ Each has a `_cover.jpg` and an `_upload-text.md` (title, description, hashtags, 
 - `ep3-black-death-short1/2/3.mp4` (vertical) + covers
 - `upload-text.md`, `script.txt`
 
+## infinite-iq-in-history/ep4-pompeii/
+- `ep4-pompeii-LONG.mp4` (16:9, 6:36) + `ep4-pompeii-thumbnail.jpg`
+- `ep4-pompeii-short1/2/3.mp4` (vertical) + covers
+- `upload-text.md`, `script.txt`
+
 ## what-if-memory/ (for a separate What If channel)
 - `what-if-memory-LONG.mp4` (16:9, 6:05) + `thumbnail.jpg`
 - `what-if-memory-SHORT.mp4` (vertical) + `short_cover.jpg`
