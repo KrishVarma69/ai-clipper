@@ -49,6 +49,11 @@ Each has a `_cover.jpg` and an `_upload-text.md` (title, description, hashtags, 
 - `ep7-apollo13-short1/2/3.mp4` (vertical) + covers
 - `upload-text.md`, `script.txt`
 
+## infinite-iq-in-history/ep8-dunkirk/
+- `ep8-dunkirk-LONG.mp4` (16:9, 7:03) + `ep8-dunkirk-thumbnail.jpg`
+- `ep8-dunkirk-short1/2/3.mp4` (vertical) + covers
+- `upload-text.md`, `script.txt`
+
 ## what-if-memory/ (for a separate What If channel)
 - `what-if-memory-LONG.mp4` (16:9, 6:05) + `thumbnail.jpg`
 - `what-if-memory-SHORT.mp4` (vertical) + `short_cover.jpg`
